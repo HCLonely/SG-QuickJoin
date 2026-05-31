@@ -8,6 +8,83 @@ interface GiveawayInfo {
   button: HTMLButtonElement;
 }
 
+// ── Styles ───────────────────────────────────────────────────────────────────
+
+GM_addStyle(`
+  .sg-quickjoin-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+    flex-shrink: 0;
+    white-space: nowrap;
+    box-sizing: border-box;
+    min-width: 180px;
+    padding: 0 16px;
+    border-radius: 0 4px 4px 0;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+
+  .sg-quickjoin-btn[data-state="idle"] {
+    background: #7ba4f7;
+    color: #fff;
+    cursor: pointer;
+    border: none;
+  }
+
+  .sg-quickjoin-btn[data-state="loading"] {
+    background: #a0a7b3;
+    color: #fff;
+    cursor: wait;
+    border: none;
+  }
+
+  .sg-quickjoin-btn[data-state="joined"] {
+    background: #e8a860;
+    color: #fff;
+    cursor: pointer;
+    border: none;
+  }
+
+  .sg-quickjoin-btn[data-state="error"] {
+    background: #e07b7b;
+    color: #fff;
+    cursor: pointer;
+    border: none;
+  }
+
+  .sg-quickjoin-btn[data-state="insufficient"] {
+    background: #c5cad2;
+    color: #fff;
+    cursor: not-allowed;
+    border: none;
+  }
+
+  .sg-quickjoin-btn[data-state="entered"] {
+    background: #e8a860;
+    color: #fff;
+    cursor: pointer;
+    border: none;
+  }
+
+  .sg-quickjoin-btn[data-state="leaving"] {
+    background: #a0a7b3;
+    color: #fff;
+    cursor: wait;
+    border: none;
+  }
+
+  .sg-quickjoin-header-fixed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+  }
+`);
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Extract the giveaway code from an href like "/giveaway/YnnXy/slug" */
@@ -50,73 +127,14 @@ function updatePointsDisplay(points: number): void {
 
 type ButtonState = "idle" | "loading" | "joined" | "error" | "insufficient" | "entered" | "leaving";
 
-const STATE_STYLES: Record<
-  ButtonState,
-  { text: string; style: Partial<CSSStyleDeclaration> }
-> = {
-  idle: {
-    text: "Join",
-    style: {
-      background: "#7ba4f7",
-      color: "#fff",
-      cursor: "pointer",
-      border: "none",
-    },
-  },
-  loading: {
-    text: "Joining...",
-    style: {
-      background: "#a0a7b3",
-      color: "#fff",
-      cursor: "wait",
-      border: "none",
-    },
-  },
-  joined: {
-    text: "Leave",
-    style: {
-      background: "#e8a860",
-      color: "#fff",
-      cursor: "pointer",
-      border: "none",
-    },
-  },
-  error: {
-    text: "⚠ Error",
-    style: {
-      background: "#e07b7b",
-      color: "#fff",
-      cursor: "pointer",
-      border: "none",
-    },
-  },
-  insufficient: {
-    text: "Need more P",
-    style: {
-      background: "#c5cad2",
-      color: "#fff",
-      cursor: "not-allowed",
-      border: "none",
-    },
-  },
-  entered: {
-    text: "Leave",
-    style: {
-      background: "#e8a860",
-      color: "#fff",
-      cursor: "pointer",
-      border: "none",
-    },
-  },
-  leaving: {
-    text: "Leaving...",
-    style: {
-      background: "#a0a7b3",
-      color: "#fff",
-      cursor: "wait",
-      border: "none",
-    },
-  },
+const STATE_TEXT: Record<ButtonState, string> = {
+  idle:          "Join",
+  loading:       "Joining...",
+  joined:        "Leave",
+  error:         "⚠ Error",
+  insufficient:  "Need more P",
+  entered:       "Leave",
+  leaving:       "Leaving...",
 };
 
 const CLICKABLE_STATES: ReadonlySet<ButtonState> = new Set(["idle", "error", "entered", "joined"]);
@@ -126,14 +144,10 @@ function setButtonState(
   state: ButtonState,
   extraText?: string
 ): void {
-  const cfg = STATE_STYLES[state];
-  btn.textContent = extraText ? `${cfg.text} ${extraText}` : cfg.text;
+  const text = STATE_TEXT[state];
+  btn.textContent = extraText ? `${text} ${extraText}` : text;
   btn.disabled = !CLICKABLE_STATES.has(state);
   btn.dataset.state = state;
-  // State-dependent styles only (position/size set once in createJoinButton)
-  Object.assign(btn.style, {
-    ...cfg.style,
-  });
 }
 
 // ── Store all giveaway infos for re-evaluation ───────────────────────────────
@@ -208,32 +222,26 @@ async function handleJoin(info: GiveawayInfo): Promise<void> {
     const data: { type?: string; points?: string; entry_count?: string } =
       await resp.json();
 
+    // Update points display from response
+    const newPoints = parseInt(data.points ?? "0", 10);
+    updatePointsDisplay(newPoints);
+
+    // Refresh all buttons: disable those with insufficient points, re-enable others
+    updateAllButtonStates();
+
     if (data.type === "success") {
       setButtonState(button, "joined");
-
-      // Update points display from response
-      const newPoints = parseInt(data.points ?? "0", 10);
-      if (newPoints > 0) {
-        updatePointsDisplay(newPoints);
-      }
     } else {
       // Show API error message (e.g. "Not Enough Points")
+      console.info(data);
       const errMsg = (data as { msg?: string }).msg;
       setButtonState(button, "error", errMsg);
-
-      // Update points from error response if present
-      const errPoints = parseInt((data as { points?: string }).points ?? "0", 10);
-      if (errPoints > 0) {
-        updatePointsDisplay(errPoints);
-      }
     }
   } catch (err) {
     console.error("[SG-QuickJoin] Request failed:", err);
     setButtonState(button, "error");
   } finally {
     isRequestInProgress = false;
-    // Refresh all buttons: disable those with insufficient points, re-enable others
-    updateAllButtonStates();
   }
 }
 
@@ -341,6 +349,15 @@ function updateAllButtonStates(): void {
   for (const info of allGiveaways) {
     const btn = info.button;
     const state = btn.dataset.state as ButtonState | undefined;
+
+    // Leave buttons (entered/joined) should always stay enabled — they may
+    // have been disabled during a concurrent request and need re-enabling.
+    // Never downgrade them to "insufficient" just because points are low.
+    if (state === "entered" || state === "joined") {
+      btn.disabled = false;
+      continue;
+    }
+
     // Only re-evaluate buttons in transient states.
     // Skip error buttons that were attempting a leave — they should stay as
     // error so the user can retry the leave, not flip back to join.
@@ -364,28 +381,10 @@ function updateAllButtonStates(): void {
 
 // ── Build button element ─────────────────────────────────────────────────────
 
-const BTN_MIN_WIDTH = "180px";
-
 function createJoinButton(): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "sg-quickjoin-btn";
-  // Fixed layout styles (never change with state)
-  Object.assign(btn.style, {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "stretch",
-    flexShrink: "0",
-    whiteSpace: "nowrap",
-    boxSizing: "border-box",
-    minWidth: BTN_MIN_WIDTH,
-    padding: "0 16px",
-    borderRadius: "0 4px 4px 0",
-    fontSize: "13px",
-    fontWeight: "500",
-    transition: "background 0.2s",
-  });
   return btn;
 }
 
@@ -478,11 +477,7 @@ function fixHeader(): void {
   const header = document.querySelector<HTMLElement>("header");
   if (!header) return;
 
-  header.style.position = "fixed";
-  header.style.top = "0";
-  header.style.left = "0";
-  header.style.width = "100%";
-  header.style.zIndex = "1000";
+  header.classList.add("sg-quickjoin-header-fixed");
 
   // Add top margin to body to prevent content from hiding behind the fixed header
   document.body.style.marginTop = header.offsetHeight + "px";

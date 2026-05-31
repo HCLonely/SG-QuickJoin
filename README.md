@@ -1,47 +1,6 @@
 # SG-QuickJoin
 
-[English](#english) | [中文](#中文)
-
----
-
-## English
-
-### Overview
-
-**SG-QuickJoin** is a [Tampermonkey](https://www.tampermonkey.net/) userscript that adds a **one-click "Join / Leave" button** to each giveaway on [SteamGifts.com](https://www.steamgifts.com/). Instead of navigating into each giveaway page individually to click "Enter Giveaway", you can join directly from the giveaway list. You can also **leave** giveaways you've already entered with one click — saving time while still requiring manual interaction for each action.
-
-### Why This Project Exists
-
-On May 2026, SteamGifts [announced](https://www.steamgifts.com/discussion/M9UFV/upcoming-autojoin-suspensions) that beginning **June 1st, 2026**, any account accessing the site with the **AutoJoin** browser extension installed would be **suspended**.
-
-**SG-QuickJoin is NOT an auto-join tool.** It does not automatically enter giveaways. It simply adds a convenient "Join" button to each giveaway row on the list page, so you can join with one click instead of:
-
-1. Clicking the giveaway title to open its page
-2. Finding the "Enter Giveaway" button
-3. Clicking it
-4. Going back to the list
-5. Repeating for every giveaway
-
-With SG-QuickJoin, each entry still requires **your manual click** — it respects the spirit of fair play while eliminating repetitive page navigation.
-
-### Features
-
-- 🖱️ **One-click join / leave** — Join any giveaway directly from the giveaway list, or leave giveaways you've already entered
-- 💰 **Points-aware** — Automatically checks if you have enough points; disables the button if you don't
-- 🔄 **Live points sync** — Updates your displayed points after each successful join or leave
-- 🚦 **Smart button states** — Visual feedback for loading, entered (Leave), leaving, insufficient points, and error states
-- 🔒 **Sequential requests** — Only one request at a time to avoid rate-limiting
-- 📌 **Fixed header** — Keeps the SteamGifts navigation bar (points) visible while scrolling
-
-### Installation
-
-1. Open the [raw file](dist/sg-quickjoin.user.js?raw=true) in your browser — Tampermonkey should detect and offer to install it
-
-Or
-
-1. Install [Tampermonkey](https://www.tampermonkey.net/) for your browser
-2. Open the [dist/sg-quickjoin.user.js](dist/sg-quickjoin.user.js) file
-3. Copy its contents, create a new Tampermonkey script, and paste
+[中文](#中文) | [English](#english)
 
 ---
 
@@ -83,6 +42,47 @@ Or
 1. 为你的浏览器安装 [Tampermonkey](https://www.tampermonkey.net/)
 2. 打开 [dist/sg-quickjoin.user.js](dist/sg-quickjoin.user.js?raw=true) 文件
 3. 复制其内容，在 Tampermonkey 中创建新脚本并粘贴
+
+---
+
+## English
+
+### Overview
+
+**SG-QuickJoin** is a [Tampermonkey](https://www.tampermonkey.net/) userscript that adds a **one-click "Join / Leave" button** to each giveaway on [SteamGifts.com](https://www.steamgifts.com/). Instead of navigating into each giveaway page individually to click "Enter Giveaway", you can join directly from the giveaway list. You can also **leave** giveaways you've already entered with one click — saving time while still requiring manual interaction for each action.
+
+### Why This Project Exists
+
+On May 2026, SteamGifts [announced](https://www.steamgifts.com/discussion/M9UFV/upcoming-autojoin-suspensions) that beginning **June 1st, 2026**, any account accessing the site with the **AutoJoin** browser extension installed would be **suspended**.
+
+**SG-QuickJoin is NOT an auto-join tool.** It does not automatically enter giveaways. It simply adds a convenient "Join" button to each giveaway row on the list page, so you can join with one click instead of:
+
+1. Clicking the giveaway title to open its page
+2. Finding the "Enter Giveaway" button
+3. Clicking it
+4. Going back to the list
+5. Repeating for every giveaway
+
+With SG-QuickJoin, each entry still requires **your manual click** — it respects the spirit of fair play while eliminating repetitive page navigation.
+
+### Features
+
+- 🖱️ **One-click join / leave** — Join any giveaway directly from the giveaway list, or leave giveaways you've already entered
+- 💰 **Points-aware** — Automatically checks if you have enough points; disables the button if you don't
+- 🔄 **Live points sync** — Updates your displayed points after each successful join or leave
+- 🚦 **Smart button states** — Visual feedback for loading, entered (Leave), leaving, insufficient points, and error states
+- 🔒 **Sequential requests** — Only one request at a time to avoid rate-limiting
+- 📌 **Fixed header** — Keeps the SteamGifts navigation bar (points) visible while scrolling
+
+### Installation
+
+1. Open the [raw file](dist/sg-quickjoin.user.js?raw=true) in your browser — Tampermonkey should detect and offer to install it
+
+Or
+
+1. Install [Tampermonkey](https://www.tampermonkey.net/) for your browser
+2. Open the [dist/sg-quickjoin.user.js](dist/sg-quickjoin.user.js) file
+3. Copy its contents, create a new Tampermonkey script, and paste
 
 ---
 
