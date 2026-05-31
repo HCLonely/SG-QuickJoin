@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SG QuickJoin
 // @namespace    https://github.com/HCLonely/SG-QuickJoin
-// @version      1.0.1
+// @version      1.0.2
 // @description  Adds a 'one-click "Join / Leave"' button to each giveaway on SteamGifts
 // @author       HCLonely
 // @match        https://www.steamgifts.com/*
