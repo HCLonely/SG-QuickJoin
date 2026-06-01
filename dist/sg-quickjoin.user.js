@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            SG QuickJoin
 // @namespace       https://github.com/HCLonely/SG-QuickJoin
-// @version         1.0.4
+// @version         1.0.5
 // @description     一个基于 Tampermonkey的用户脚本，为 SteamGifts.com上的每个抽奖添加一键"Join / Leave"按钮。
 // @description:en  Adds a 'one-click "Join / Leave"' button to each giveaway on SteamGifts
 // @author          HCLonely
