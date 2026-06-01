@@ -1,13 +1,17 @@
 // ==UserScript==
 // @name         SG QuickJoin
 // @namespace    https://github.com/HCLonely/SG-QuickJoin
-// @version      1.0.2
+// @version      1.0.3
 // @description  Adds a 'one-click "Join / Leave"' button to each giveaway on SteamGifts
 // @author       HCLonely
 // @match        https://www.steamgifts.com/*
 // @license      MIT
 // @tag          games
 // @grant        GM_addStyle
+// @grant        GM_registerMenuCommand
+// @grant        GM_unregisterMenuCommand
+// @grant        GM_setValue
+// @grant        GM_getValue
 // ==/UserScript==
 
 "use strict";
@@ -85,6 +89,10 @@
     left: 0;
     width: 100%;
     z-index: 1000;
+  }
+
+  .sg-hide-joined .giveaway__row-outer-wrap:has(.sg-quickjoin-btn[data-state="entered"],.sg-quickjoin-btn[data-state="joined"]) {
+    display: none;
   }
 `);
   function extractCode(href) {
@@ -318,7 +326,8 @@
       headingName,
       code,
       requiredPoints: requiredPoints || 0,
-      button: null
+      button: null,
+      syncHeight: null
     };
     const innerWrap = outWrap.querySelector(
       ".giveaway__row-inner-wrap"
@@ -347,6 +356,8 @@
       handleButtonClick(info);
     });
     function syncButtonHeight() {
+      const parentHeight = parent.getBoundingClientRect().height;
+      if (parentHeight === 0) return;
       const cs = getComputedStyle(parent);
       const pt = parseFloat(cs.paddingTop) || 0;
       const pb = parseFloat(cs.paddingBottom) || 0;
@@ -356,8 +367,9 @@
         btn.style.paddingTop = pt + "px";
         btn.style.paddingBottom = pb + "px";
       }
-      btn.style.height = parent.getBoundingClientRect().height + "px";
+      btn.style.height = parentHeight + "px";
     }
+    info.syncHeight = syncButtonHeight;
     parent.appendChild(btn);
     syncButtonHeight();
     window.addEventListener("resize", syncButtonHeight, { passive: true });
@@ -369,8 +381,37 @@
     header.classList.add("sg-quickjoin-header-fixed");
     document.body.style.marginTop = header.offsetHeight + "px";
   }
+  var HIDE_JOINED_KEY = "hideJoined";
+  function applyHideJoinedSetting(shouldHide) {
+    document.body.classList.toggle("sg-hide-joined", shouldHide);
+    if (!shouldHide) {
+      for (const info of allGiveaways) {
+        info.syncHeight();
+      }
+    }
+  }
+  function toggleHideJoined() {
+    const current = GM_getValue(HIDE_JOINED_KEY, false);
+    const next = !current;
+    GM_setValue(HIDE_JOINED_KEY, next);
+    applyHideJoinedSetting(next);
+  }
+  var menuCommandId;
+  function registerHideJoinedMenu() {
+    if (menuCommandId) {
+      GM_unregisterMenuCommand(menuCommandId);
+    }
+    const isHidden = GM_getValue(HIDE_JOINED_KEY, false);
+    const caption = isHidden ? "☑ 显示已加入的 Giveaway" : "☐ 隐藏已加入的 Giveaway";
+    menuCommandId = GM_registerMenuCommand(caption, () => {
+      toggleHideJoined();
+      registerHideJoinedMenu();
+    });
+  }
+  registerHideJoinedMenu();
   function main() {
     fixHeader();
+    applyHideJoinedSetting(GM_getValue(HIDE_JOINED_KEY, false));
     const outWraps = document.querySelectorAll(
       "div.giveaway__row-outer-wrap"
     );

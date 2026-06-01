@@ -6,6 +6,7 @@ interface GiveawayInfo {
   code: string;
   requiredPoints: number;
   button: HTMLButtonElement;
+  syncHeight: () => void;
 }
 
 // ── Styles ───────────────────────────────────────────────────────────────────
@@ -83,6 +84,10 @@ GM_addStyle(`
     width: 100%;
     z-index: 1000;
   }
+
+  .sg-hide-joined .giveaway__row-outer-wrap:has(.sg-quickjoin-btn[data-state="entered"],.sg-quickjoin-btn[data-state="joined"]) {
+    display: none;
+  }
 `);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -128,13 +133,13 @@ function updatePointsDisplay(points: number): void {
 type ButtonState = "idle" | "loading" | "joined" | "error" | "insufficient" | "entered" | "leaving";
 
 const STATE_TEXT: Record<ButtonState, string> = {
-  idle:          "Join",
-  loading:       "Joining...",
-  joined:        "Leave",
-  error:         "⚠ Error",
-  insufficient:  "Need more P",
-  entered:       "Leave",
-  leaving:       "Leaving...",
+  idle: "Join",
+  loading: "Joining...",
+  joined: "Leave",
+  error: "⚠ Error",
+  insufficient: "Need more P",
+  entered: "Leave",
+  leaving: "Leaving...",
 };
 
 const CLICKABLE_STATES: ReadonlySet<ButtonState> = new Set(["idle", "error", "entered", "joined"]);
@@ -412,6 +417,7 @@ function setupGiveawayRow(outWrap: HTMLElement): void {
     code,
     requiredPoints: requiredPoints || 0,
     button: null!,
+    syncHeight: null!,
   };
 
   const innerWrap = outWrap.querySelector<HTMLElement>(
@@ -450,6 +456,11 @@ function setupGiveawayRow(outWrap: HTMLElement): void {
   // If parent has padding, the button (a flex child) only fills the
   // content area — negative margins extend it into the padding zone.
   function syncButtonHeight(): void {
+    // Skip when the parent is hidden — getBoundingClientRect returns 0 and
+    // would zero out the button height permanently.
+    const parentHeight = parent.getBoundingClientRect().height;
+    if (parentHeight === 0) return;
+
     const cs = getComputedStyle(parent);
     const pt = parseFloat(cs.paddingTop) || 0;
     const pb = parseFloat(cs.paddingBottom) || 0;
@@ -459,8 +470,10 @@ function setupGiveawayRow(outWrap: HTMLElement): void {
       btn.style.paddingTop = pt + "px";
       btn.style.paddingBottom = pb + "px";
     }
-    btn.style.height = parent.getBoundingClientRect().height + "px";
+    btn.style.height = parentHeight + "px";
   }
+
+  info.syncHeight = syncButtonHeight;
 
   parent.appendChild(btn);
   syncButtonHeight();
@@ -483,10 +496,53 @@ function fixHeader(): void {
   document.body.style.marginTop = header.offsetHeight + "px";
 }
 
+// ── Hide joined giveaways toggle ──────────────────────────────────────────────
+
+const HIDE_JOINED_KEY = "hideJoined";
+
+function applyHideJoinedSetting(shouldHide: boolean): void {
+  document.body.classList.toggle("sg-hide-joined", shouldHide);
+  // Re-sync button heights when showing previously hidden elements
+  if (!shouldHide) {
+    for (const info of allGiveaways) {
+      info.syncHeight();
+    }
+  }
+}
+
+function toggleHideJoined(): void {
+  const current = GM_getValue<boolean>(HIDE_JOINED_KEY, false);
+  const next = !current;
+  GM_setValue(HIDE_JOINED_KEY, next);
+  applyHideJoinedSetting(next);
+}
+
+// Register menu command with label reflecting current state.
+// Re-register on each toggle to update the caption.
+let menuCommandId;
+function registerHideJoinedMenu(): void {
+  if (menuCommandId) {
+    GM_unregisterMenuCommand(menuCommandId);
+  }
+  const isHidden = GM_getValue<boolean>(HIDE_JOINED_KEY, false);
+  const caption = isHidden
+    ? "☑ 显示已加入的 Giveaway"
+    : "☐ 隐藏已加入的 Giveaway";
+
+  menuCommandId = GM_registerMenuCommand(caption, () => {
+    toggleHideJoined();
+    registerHideJoinedMenu();
+  });
+};
+registerHideJoinedMenu();
+
 // ── Entry point ──────────────────────────────────────────────────────────────
 
 function main(): void {
   fixHeader();
+
+  // Apply hide-joined setting from saved state
+  applyHideJoinedSetting(GM_getValue<boolean>(HIDE_JOINED_KEY, false));
 
   const outWraps = document.querySelectorAll<HTMLElement>(
     "div.giveaway__row-outer-wrap"
