@@ -1,6 +1,6 @@
 {
   "name": "sg-quickjoin",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "SteamGifts QuickJoin - auto join giveaways with one click",
   "private": true,
   "scripts": {

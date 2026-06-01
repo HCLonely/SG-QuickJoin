@@ -4,7 +4,7 @@ const path = require("path");
 
 const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "utf-8"));
 const header = fs.readFileSync(path.join(__dirname, "header.txt"), "utf-8")
-  .replace(/\/\/ @version\s+.+/, `// @version      ${pkg.version}`);
+  .replace(/\/\/ @version\s+.+/, `// @version         ${pkg.version}`);
 const watch = process.argv.includes("--watch");
 
 /** @type {esbuild.BuildOptions} */
